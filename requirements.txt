@@ -1,0 +1,19 @@
+# TAA — Faza 1 dependencies (E00-S01 scope only).
+# Every entry justified. New deps require PR justification (project-context R6).
+
+# Web framework — 5.1 LTS: familiar (IWALLET), sync/async mix, batteries included.
+Django>=5.1,<5.2
+
+# Env-driven single settings.py (project-context R6). Loads .env → config().
+python-decouple>=3.8
+
+# DATABASE_URL parsing — simpler than manual parse; used in settings.py.
+dj-database-url>=2.3
+
+# Postgres driver (psycopg 3.x, binary wheel — no build toolchain needed locally).
+# pgvector extension itself is enabled at DB-init in E00-S02, not here.
+psycopg[binary]>=3.2
+
+# ASGI server for async views (voice/RAG endpoints in later stories).
+# Installed now so `python manage.py check --deploy` and dev runserver both work.
+uvicorn[standard]>=0.32
