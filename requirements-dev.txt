@@ -15,3 +15,6 @@ factory-boy>=3.3,<4.0
 
 # Template linter (project-context stack table)
 djlint>=1.36,<2.0
+
+# Pre-commit hook runner (project-context R12)
+pre-commit>=4.0,<5.0
