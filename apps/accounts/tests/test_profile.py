@@ -4,6 +4,7 @@ from decimal import Decimal
 
 import pytest
 
+from apps.accounts.constants import OnboardingStep
 from apps.accounts.models import EntrepreneurProfile
 
 
@@ -24,7 +25,7 @@ def test_profile_field_defaults_when_freshly_created(profile_factory):
     assert profile.is_it_sector is False
     assert profile.current_status == ""
     assert profile.chosen_regime == ""
-    assert profile.onboarding_step == ""
+    assert profile.onboarding_step == OnboardingStep.NOT_STARTED
 
 
 @pytest.mark.django_db
