@@ -8,6 +8,7 @@ from typing import Any
 from apps.accounts.language import detect_language
 from apps.bot.handlers.constants import UNKNOWN_COMMAND
 from apps.bot.handlers.help import send_help
+from apps.bot.handlers.start import send_start
 from apps.bot.telegram import get_bot
 
 logger = logging.getLogger(__name__)
@@ -42,5 +43,7 @@ async def handle_command(update: dict[str, Any]) -> None:
     if command == "help":
         await send_help(update)
         return
-    # /start intentionally not wired here — E05-S05 owns it. Unknown for now.
+    if command == "start":
+        await send_start(update)
+        return
     await _send_unknown_command(update)

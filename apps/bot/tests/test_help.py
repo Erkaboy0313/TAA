@@ -105,19 +105,6 @@ async def test_handle_command_dispatches_help_to_send_help(
 
 
 @pytest.mark.asyncio
-async def test_handle_command_replies_unknown_for_start_until_e05_s05(
-    bot_stub: AsyncMock,
-) -> None:
-    from apps.bot.handlers.commands import handle_command
-
-    await handle_command(_make_update("/start"))
-
-    bot_stub.send_message.assert_awaited_once_with(
-        chat_id=42, text=UNKNOWN_COMMAND[Language.UZ_LATIN]
-    )
-
-
-@pytest.mark.asyncio
 async def test_handle_command_replies_unknown_for_gibberish(bot_stub: AsyncMock) -> None:
     from apps.bot.handlers.commands import handle_command
 

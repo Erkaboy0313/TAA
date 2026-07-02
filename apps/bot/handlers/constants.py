@@ -61,3 +61,51 @@ UNKNOWN_COMMAND: dict[str, str] = {
     Language.UZ_CYRILLIC: _UNKNOWN_UZ_CYRILLIC,
     Language.RUSSIAN: _UNKNOWN_RUSSIAN,
 }
+
+_START_UZ_LATIN = """
+👋 Salom! Men TAA — soliq va buxgalteriya bo'yicha yordamchi botman.
+
+Onboarding sehirgari tez orada tayyor bo'ladi — u sizning faoliyatingizni
+so'raydi va shaxsiy soliq brifingini beradi.
+
+Hozircha:
+• /help — mavjud imkoniyatlar
+• matn yoki ovoz orqali savol bering — javob beraman
+
+Bu ma'lumot vositasi. Muhim qarorlar uchun sertifikatli maslahatchi
+kerak bo'ladi.
+""".strip()
+
+_START_UZ_CYRILLIC = """
+👋 Салом! Мен TAA — солиқ ва бухгалтерия бўйича ёрдамчи ботман.
+
+Онбординг сеҳирғари тез орада тайёр бўлади — у сизнинг фаолиятингизни
+сўрайди ва шахсий солиқ брифингини беради.
+
+Ҳозирча:
+• /help — мавжуд имкониятлар
+• матн ёки овоз орқали савол беринг — жавоб бераман
+
+Бу маълумот воситаси. Муҳим қарорлар учун сертификатли маслаҳатчи
+керак бўлади.
+""".strip()
+
+_START_RUSSIAN = """
+👋 Здравствуйте! Я TAA — бот-помощник по налогам и бухгалтерии.
+
+Мастер онбординга скоро будет готов — он расспросит о вашей
+деятельности и подготовит персональный налоговый брифинг.
+
+Пока доступно:
+• /help — что я умею
+• отправьте вопрос текстом или голосом — отвечу
+
+Это информационный сервис. Для важных решений обратитесь к
+сертифицированному консультанту.
+""".strip()
+
+START_TEXT: dict[str, str] = {
+    Language.UZ_LATIN: _START_UZ_LATIN,
+    Language.UZ_CYRILLIC: _START_UZ_CYRILLIC,
+    Language.RUSSIAN: _START_RUSSIAN,
+}
