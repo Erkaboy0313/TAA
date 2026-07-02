@@ -29,12 +29,20 @@ VALID_UPDATE: dict = {
 DISTINCT_UPDATE_ID = 9876
 
 
+@pytest.fixture(autouse=True)
+def _disable_ssl_redirect(settings):  # noqa: PT004
+    # DEBUG=False (as in CI) enables SECURE_SSL_REDIRECT and every plain HTTP
+    # request from AsyncClient gets a 301 before it ever hits our view. The
+    # X-Forwarded-Proto trick does not propagate through the async pipeline
+    # cleanly, so we disable the redirect for the whole webhook test module.
+    # The redirect itself is exercised by Django's own security tests; our
+    # concern here is the view contract.
+    settings.SECURE_SSL_REDIRECT = False
+
+
 @pytest.fixture
 def client() -> AsyncClient:
-    # Mimic being behind Caddy (architecture §8) so SecurityMiddleware does
-    # not 301-redirect our POSTs under DEBUG=False (as CI runs). The header
-    # matches settings.SECURE_PROXY_SSL_HEADER.
-    return AsyncClient(HTTP_X_FORWARDED_PROTO="https")
+    return AsyncClient()
 
 
 @pytest.fixture
