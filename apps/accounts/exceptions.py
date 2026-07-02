@@ -11,3 +11,7 @@ class AccountsError(DomainError):
     """Base class for expected accounts-domain errors (user lookup,
     profile updates, language handling).
     """
+
+
+class UserAlreadyExistsError(AccountsError):
+    """Raised when a create attempt collides with an existing telegram_id."""
