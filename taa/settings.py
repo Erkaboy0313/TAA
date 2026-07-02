@@ -24,6 +24,14 @@ ALLOWED_HOSTS: list[str] = config("ALLOWED_HOSTS", default="", cast=Csv())
 # layer that lands with prod deploy (Faza 3).
 ADMIN_ENABLED: bool = config("ADMIN_ENABLED", default=DEBUG, cast=bool)
 
+# Telegram bot (E05-S01). Empty defaults let tests import Django without
+# bot credentials in the env; `apps.bot.telegram.get_bot()` raises
+# BotNotConfiguredError at first real use if the token is unset.
+# TELEGRAM_WEBHOOK_SECRET is embedded in the webhook URL path (architecture
+# §9) so an attacker cannot POST fake updates without guessing the secret.
+TELEGRAM_BOT_TOKEN: str = config("TELEGRAM_BOT_TOKEN", default="")
+TELEGRAM_WEBHOOK_SECRET: str = config("TELEGRAM_WEBHOOK_SECRET", default="")
+
 # ---------------------------------------------------------------------------
 # Applications
 # ---------------------------------------------------------------------------
@@ -37,6 +45,7 @@ INSTALLED_APPS: list[str] = [
     # Local apps
     "apps.core",
     "apps.accounts",
+    "apps.bot",
 ]
 
 MIDDLEWARE: list[str] = [
