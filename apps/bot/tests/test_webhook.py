@@ -31,7 +31,10 @@ DISTINCT_UPDATE_ID = 9876
 
 @pytest.fixture
 def client() -> AsyncClient:
-    return AsyncClient()
+    # Mimic being behind Caddy (architecture §8) so SecurityMiddleware does
+    # not 301-redirect our POSTs under DEBUG=False (as CI runs). The header
+    # matches settings.SECURE_PROXY_SSL_HEADER.
+    return AsyncClient(HTTP_X_FORWARDED_PROTO="https")
 
 
 @pytest.fixture
