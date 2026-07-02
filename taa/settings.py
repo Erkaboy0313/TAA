@@ -19,6 +19,11 @@ SECRET_KEY: str = config("SECRET_KEY")
 DEBUG: bool = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS: list[str] = config("ALLOWED_HOSTS", default="", cast=Csv())
 
+# Admin gate — off in prod by default. Ops can force-enable via env for
+# short-lived investigation. Architecture §9 spells out the IP-allowlist
+# layer that lands with prod deploy (Faza 3).
+ADMIN_ENABLED: bool = config("ADMIN_ENABLED", default=DEBUG, cast=bool)
+
 # ---------------------------------------------------------------------------
 # Applications
 # ---------------------------------------------------------------------------

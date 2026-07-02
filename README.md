@@ -58,6 +58,14 @@ URLs while `make dev` is running:
 First-time contributors: `make precommit-install` once, so pre-commit hooks
 run on every commit.
 
+Admin (gated by `ADMIN_ENABLED`, defaults to `DEBUG`):
+
+```bash
+make dev
+docker compose exec app python manage.py createsuperuser
+# then visit http://localhost:8000/admin/
+```
+
 ## Roadmap
 
 - **Faza 1** (~10–14 hafta) — Bot MVP, barcha 10 feature.
