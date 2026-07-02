@@ -37,25 +37,26 @@ Python 3.12+ · Django 5.1 · PostgreSQL 16 + pgvector · Redis 7 · Celery · p
 
 ## Development
 
-Copy `.env.example` to `.env` and fill values. Then:
+Copy `.env.example` to `.env` and fill values.
+
+Common tasks (run from repo root):
 
 ```bash
-docker compose up
+make dev             # start stack (postgres, redis, app, celery)
+make migrate         # apply DB migrations
+make test            # run pytest inside the app container
+make check           # lint + format --check + test (matches CI)
+make down            # stop the stack
+make help            # list all targets
 ```
 
-- Django app: http://localhost:8000
-- Postgres: localhost:5432
-- Redis: localhost:6379
+URLs while `make dev` is running:
+- Django app: <http://localhost:8000>
+- Postgres: `localhost:5432`
+- Redis: `localhost:6379`
 
-Common operations (all run inside the `app` container):
-
-```bash
-docker compose exec app python manage.py migrate
-docker compose exec app python manage.py shell
-```
-
-Celery worker and beat auto-start with the stack. Logs are visible in the
-compose output; add `docker compose logs -f celery-worker` to tail one service.
+First-time contributors: `make precommit-install` once, so pre-commit hooks
+run on every commit.
 
 ## Roadmap
 
