@@ -210,10 +210,14 @@ async def test_dispatch_logs_unhandled_when_message_text_is_none(
 @pytest.mark.asyncio
 async def test_command_handler_logs_command_name_in_extras(
     caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     # Uses the REAL command handler (no stub monkeypatch) to prove the
-    # command-name extraction in the log payload.
+    # command-name extraction in the log payload. `send_help` is stubbed
+    # because dispatching to a real handler is out of scope for this test.
     from apps.bot.handlers.commands import handle_command
+
+    monkeypatch.setattr("apps.bot.handlers.commands.send_help", AsyncMock())
 
     update = {
         "update_id": COMMAND_LOG_UPDATE_ID,
@@ -222,7 +226,7 @@ async def test_command_handler_logs_command_name_in_extras(
     with caplog.at_level(logging.INFO, logger="apps.bot.handlers.commands"):
         await handle_command(update)
 
-    matches = [r for r in caplog.records if r.message == "bot.handler.command.stub"]
+    matches = [r for r in caplog.records if r.message == "bot.handler.command"]
     assert len(matches) == 1
     assert matches[0].command == "help"
     assert matches[0].update_id == COMMAND_LOG_UPDATE_ID
