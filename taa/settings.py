@@ -36,6 +36,7 @@ INSTALLED_APPS: list[str] = [
     "django.contrib.staticfiles",
     # Local apps
     "apps.core",
+    "apps.accounts",
 ]
 
 MIDDLEWARE: list[str] = [
