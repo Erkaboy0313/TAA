@@ -1,4 +1,5 @@
 """ASGI entry point for TAA (used by uvicorn for async views)."""
+
 import os
 
 from django.core.asgi import get_asgi_application
