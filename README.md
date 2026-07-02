@@ -37,11 +37,25 @@ Python 3.12+ · Django 5.1 · PostgreSQL 16 + pgvector · Redis 7 · Celery · p
 
 ## Development
 
-Faza 1 hali boshlanmagan. Boshlash uchun:
+Copy `.env.example` to `.env` and fill values. Then:
 
 ```bash
-# TODO: DevOps agent shu bo'limni to'ldiradi.
+docker compose up
 ```
+
+- Django app: http://localhost:8000
+- Postgres: localhost:5432
+- Redis: localhost:6379
+
+Common operations (all run inside the `app` container):
+
+```bash
+docker compose exec app python manage.py migrate
+docker compose exec app python manage.py shell
+```
+
+Celery worker and beat auto-start with the stack. Logs are visible in the
+compose output; add `docker compose logs -f celery-worker` to tail one service.
 
 ## Roadmap
 

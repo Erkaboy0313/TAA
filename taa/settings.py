@@ -103,6 +103,18 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------
+# Celery (E00-S02). Broker + result backend read from REDIS_URL so local dev
+# (docker-compose network hostname `redis`) and prod (managed Redis URL)
+# share the same code path. `django-celery-beat`/`django-celery-results`
+# deliberately NOT installed — v2 optimisation (project-context R6).
+# ---------------------------------------------------------------------------
+CELERY_BROKER_URL: str = config("REDIS_URL", default="redis://redis:6379/0")
+CELERY_RESULT_BACKEND: str = config("REDIS_URL", default="redis://redis:6379/0")
+CELERY_TIMEZONE: str = TIME_ZONE
+CELERY_TASK_TRACK_STARTED: bool = True
+CELERY_TASK_TIME_LIMIT: int = 30 * 60
+
+# ---------------------------------------------------------------------------
 # Production hardening (project-context R10 §9). Baked in from day one so
 # `if not DEBUG` deploys automatically enforce HTTPS + secure cookies.
 # ---------------------------------------------------------------------------
