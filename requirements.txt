@@ -1,4 +1,4 @@
-# TAA — Faza 1 dependencies (E00-S01 scope only).
+# TAA — Faza 1 dependencies (E00-S01 + E00-S02 scope).
 # Every entry justified. New deps require PR justification (project-context R6).
 
 # Web framework — 5.1 LTS: familiar (IWALLET), sync/async mix, batteries included.
@@ -17,3 +17,12 @@ psycopg[binary]>=3.2
 # ASGI server for async views (voice/RAG endpoints in later stories).
 # Installed now so `python manage.py check --deploy` and dev runserver both work.
 uvicorn[standard]>=0.32
+
+# Background task queue (E00-S02). Required by celery-worker/celery-beat
+# containers. Actual periodic tasks (lex.uz weekly sync, deadline pushes)
+# land in E02-S06 and E10-S04.
+celery>=5.4,<5.5
+
+# Python client for Redis — Celery broker/result-backend transport
+# (E00-S02). Also used by rate-limit middleware (E05-S07) in later stories.
+redis>=5.0,<6.0

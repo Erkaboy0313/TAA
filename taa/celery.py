@@ -1,8 +1,18 @@
-"""Celery app placeholder for TAA.
+"""Celery application for TAA.
 
-Real wiring (broker URL, autodiscover_tasks, Beat schedule) lands in
-E00-S02 (Docker/Redis) and E02-S06 (weekly lex.uz sync). Kept as a
-minimal stub so imports don't break future stories.
+Minimum functional wiring (E00-S02): broker/backend read from Django
+settings (`CELERY_*` namespace), tasks auto-discovered from installed apps.
+
+Periodic schedules (lex.uz weekly sync, deadline daily push) land in
+E02-S06 and E10-S04. `django-celery-beat`/`django-celery-results` are NOT
+introduced here — that's a v2 optimisation (project-context R6).
 """
-# Celery deliberately not imported yet — dep lands in E00-S02.
-# Placeholder module exists to lock the import path (`taa.celery`).
+import os
+
+from celery import Celery
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taa.settings")
+
+app: Celery = Celery("taa")
+app.config_from_object("django.conf:settings", namespace="CELERY")
+app.autodiscover_tasks()

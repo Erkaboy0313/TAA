@@ -1,0 +1,88 @@
+# TAA — local dev stack (E00-S02).
+# Follows architecture.md §8 (local dev topology). Compose v2 syntax
+# (no `version:` key). Default bridge network — project-context R1 simplicity;
+# no custom network needed for a 5-service stack.
+
+services:
+  postgres:
+    # pgvector image = Postgres 16 + pgvector extension pre-installed.
+    # Alternative vector DB explicitly banned (project-context R6, devops.md).
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taa_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-taa}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-taa} -d ${POSTGRES_DB:-taa}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Dev override: uvicorn --reload for live source changes. Prod uses the
+    # Dockerfile CMD (no --reload).
+    command: ["uvicorn", "taa.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["celery", "-A", "taa", "worker", "--loglevel=info"]
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["celery", "-A", "taa", "beat", "--loglevel=info"]
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
