@@ -1,0 +1,17 @@
+# Dev-only tooling. Not installed in the production image.
+# Local: `pip install -r requirements.txt -r requirements-dev.txt`
+
+# Lint + format (single tool per project-context R6)
+ruff>=0.7,<0.8
+
+# Test framework + Django plugin + async plugin
+pytest>=8.3,<9.0
+pytest-django>=4.9,<5.0
+pytest-asyncio>=0.24,<0.25
+pytest-cov>=6.0,<7.0
+
+# Fixture factory (R11 — factories, not fixtures hardcoded)
+factory-boy>=3.3,<4.0
+
+# Template linter (project-context stack table)
+djlint>=1.36,<2.0

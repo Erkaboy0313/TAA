@@ -1,0 +1,69 @@
+[project]
+name = "taa"
+version = "0.1.0"
+description = "TAA — Tax Advisor Assistant"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["apps", "taa"]
+extend-exclude = [
+    "migrations",
+    "**/migrations/*",
+]
+
+[tool.ruff.lint]
+# E,F,W,I,B,UP,DJ,SIM,RET,ARG,PL,TCH,TID per project-context §4
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "SIM", "RET", "ARG", "PL", "TCH", "TID"]
+ignore = [
+    "E501",   # line length handled by formatter
+    "PLR0913", # too many arguments — kwarg groups are our style
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["taa", "apps"]
+combine-as-imports = true
+section-order = ["future", "standard-library", "third-party", "django", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+django = ["django"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "taa.settings"
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "-p", "no:cacheprovider",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning:django.*",
+]
+
+[tool.coverage.run]
+source = ["apps", "taa"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "manage.py",
+    "taa/wsgi.py",
+    "taa/asgi.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = false
