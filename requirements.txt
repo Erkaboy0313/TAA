@@ -26,3 +26,6 @@ celery>=5.4,<5.5
 # Python client for Redis — Celery broker/result-backend transport
 # (E00-S02). Also used by rate-limit middleware (E05-S07) in later stories.
 redis>=5.0,<6.0
+
+# Telegram bot SDK. Webhook mode; async — matches R9 voice endpoints.
+python-telegram-bot>=21.6,<22.0
