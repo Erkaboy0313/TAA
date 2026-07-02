@@ -7,7 +7,7 @@ from functools import cached_property
 
 from django.db import models
 
-from apps.accounts.constants import Language
+from apps.accounts.constants import CurrentStatus, Language, OnboardingStep, Regime
 from apps.core.models import TimestampedModel
 
 
@@ -47,10 +47,9 @@ class EntrepreneurProfile(TimestampedModel):
 
     All domain fields are nullable or have permissive defaults because the
     wizard persists partial state after every step — a half-onboarded user
-    still has a row here. The three enum-shaped CharFields
-    (`current_status`, `chosen_regime`, `onboarding_step`) intentionally
-    carry no `choices=` yet; the `TextChoices` sets land in E01-S03 together
-    with validation and constraints.
+    still has a row here. `chosen_regime` and `current_status` stay blank
+    until the wizard fills them; `onboarding_step` defaults to
+    `OnboardingStep.NOT_STARTED` so new rows land in a well-known state.
     """
 
     user = models.OneToOneField(
@@ -69,12 +68,23 @@ class EntrepreneurProfile(TimestampedModel):
     employee_count = models.PositiveIntegerField(default=0)
     has_foreign_clients = models.BooleanField(default=False)
     is_it_sector = models.BooleanField(default=False)
-    # choices land in S03
-    current_status = models.CharField(max_length=32, blank=True, default="")
-    # choices land in S03
-    chosen_regime = models.CharField(max_length=32, blank=True, default="")
-    # choices land in S03
-    onboarding_step = models.CharField(max_length=32, blank=True, default="")
+    current_status = models.CharField(
+        max_length=32,
+        choices=CurrentStatus.choices,
+        blank=True,
+        default="",
+    )
+    chosen_regime = models.CharField(
+        max_length=32,
+        choices=Regime.choices,
+        blank=True,
+        default="",
+    )
+    onboarding_step = models.CharField(
+        max_length=32,
+        choices=OnboardingStep.choices,
+        default=OnboardingStep.NOT_STARTED,
+    )
 
     class Meta:
         db_table = "accounts_profile"

@@ -3,7 +3,7 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from apps.accounts.constants import Language
+from apps.accounts.constants import Language, OnboardingStep
 from apps.accounts.models import EntrepreneurProfile, User
 
 
@@ -28,4 +28,4 @@ class ProfileFactory(DjangoModelFactory):
     is_it_sector = False
     current_status = ""
     chosen_regime = ""
-    onboarding_step = ""
+    onboarding_step = OnboardingStep.NOT_STARTED
