@@ -54,6 +54,7 @@ INSTALLED_APPS: list[str] = [
     "apps.accounts",
     "apps.bot",
     "apps.corpus",
+    "apps.rag",
     "apps.voice",
 ]
 
