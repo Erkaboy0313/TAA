@@ -1,7 +1,21 @@
-"""Inline static bot copy. Promote to templates when a second handler
-needs multi-language strings (R2 rule of 3)."""
+"""Per-language bot response templates.
+
+Three multi-language string dicts (help / start / unknown / rate_limit)
+now share a shape, which triggers the R2 rule of 3 — promote them from
+inline handler constants into one place with a small render API.
+
+`render_template(name, language, **context)` looks up the bundle, picks
+the language (falling back to `uz-Latn`), and runs `str.format(**context)`
+if any keyword args are provided. No Jinja2 yet — plain `.format()`
+covers every current caller. Add Jinja2 when a template needs a loop
+or conditional (R6).
+"""
+
+from __future__ import annotations
 
 from apps.accounts.constants import Language
+
+# ------------------------- /help ------------------------- #
 
 _HELP_UZ_LATIN = """
 👋 Salom! Men TAA — soliq, buxgalteriya va yuridik masalalar bo'yicha
@@ -42,25 +56,7 @@ _HELP_RUSSIAN = """
 сертифицированному консультанту.
 """.strip()
 
-HELP_TEXT: dict[str, str] = {
-    Language.UZ_LATIN: _HELP_UZ_LATIN,
-    Language.UZ_CYRILLIC: _HELP_UZ_CYRILLIC,
-    Language.RUSSIAN: _HELP_RUSSIAN,
-}
-
-_UNKNOWN_UZ_LATIN = (
-    "Bu buyruqni tanimadim. /help ni yuboring — mavjud buyruqlar ro'yxatini beraman."
-)
-_UNKNOWN_UZ_CYRILLIC = (
-    "Бу буйруқни танимадим. /help ни юборинг — мавжуд буйруқлар рўйхатини бераман."
-)
-_UNKNOWN_RUSSIAN = "Не знаю такую команду. Отправьте /help — покажу доступные команды."
-
-UNKNOWN_COMMAND: dict[str, str] = {
-    Language.UZ_LATIN: _UNKNOWN_UZ_LATIN,
-    Language.UZ_CYRILLIC: _UNKNOWN_UZ_CYRILLIC,
-    Language.RUSSIAN: _UNKNOWN_RUSSIAN,
-}
+# ------------------------- /start ------------------------- #
 
 _START_UZ_LATIN = """
 👋 Salom! Men TAA — soliq va buxgalteriya bo'yicha yordamchi botman.
@@ -104,18 +100,60 @@ _START_RUSSIAN = """
 сертифицированному консультанту.
 """.strip()
 
-START_TEXT: dict[str, str] = {
-    Language.UZ_LATIN: _START_UZ_LATIN,
-    Language.UZ_CYRILLIC: _START_UZ_CYRILLIC,
-    Language.RUSSIAN: _START_RUSSIAN,
-}
+# ------------------------- Unknown command ------------------------- #
+
+_UNKNOWN_UZ_LATIN = (
+    "Bu buyruqni tanimadim. /help ni yuboring — mavjud buyruqlar ro'yxatini beraman."
+)
+_UNKNOWN_UZ_CYRILLIC = (
+    "Бу буйруқни танимадим. /help ни юборинг — мавжуд буйруқлар рўйхатини бераман."
+)
+_UNKNOWN_RUSSIAN = "Не знаю такую команду. Отправьте /help — покажу доступные команды."
+
+# ------------------------- Rate limit ------------------------- #
 
 _RATE_LIMIT_UZ_LATIN = "⏳ Juda ko'p so'rov. Bir daqiqa kuting va qayta urining."
 _RATE_LIMIT_UZ_CYRILLIC = "⏳ Жуда кўп сўров. Бир дақиқа кутинг ва қайта уриниб кўринг."
 _RATE_LIMIT_RUSSIAN = "⏳ Слишком много запросов. Подождите минуту и попробуйте снова."
 
-RATE_LIMIT_TEXT: dict[str, str] = {
-    Language.UZ_LATIN: _RATE_LIMIT_UZ_LATIN,
-    Language.UZ_CYRILLIC: _RATE_LIMIT_UZ_CYRILLIC,
-    Language.RUSSIAN: _RATE_LIMIT_RUSSIAN,
+
+TEMPLATES: dict[str, dict[str, str]] = {
+    "help": {
+        Language.UZ_LATIN: _HELP_UZ_LATIN,
+        Language.UZ_CYRILLIC: _HELP_UZ_CYRILLIC,
+        Language.RUSSIAN: _HELP_RUSSIAN,
+    },
+    "start": {
+        Language.UZ_LATIN: _START_UZ_LATIN,
+        Language.UZ_CYRILLIC: _START_UZ_CYRILLIC,
+        Language.RUSSIAN: _START_RUSSIAN,
+    },
+    "unknown_command": {
+        Language.UZ_LATIN: _UNKNOWN_UZ_LATIN,
+        Language.UZ_CYRILLIC: _UNKNOWN_UZ_CYRILLIC,
+        Language.RUSSIAN: _UNKNOWN_RUSSIAN,
+    },
+    "rate_limit": {
+        Language.UZ_LATIN: _RATE_LIMIT_UZ_LATIN,
+        Language.UZ_CYRILLIC: _RATE_LIMIT_UZ_CYRILLIC,
+        Language.RUSSIAN: _RATE_LIMIT_RUSSIAN,
+    },
 }
+
+
+def render_template(name: str, language: str, /, **context: str) -> str:
+    """Return a rendered bot response.
+
+    `name` and `language` are positional-only so callers can pass
+    `name="Aziza"` as a template context variable without colliding with
+    the template selector.
+
+    Falls back to Uzbek-Latin if `language` is not in the bundle. If
+    `context` is empty the raw string is returned unchanged, avoiding
+    accidental `{...}` interpolation on literal braces the copy might
+    contain (KeyError on stray placeholders is preferable to silent
+    corruption).
+    """
+    bundle = TEMPLATES[name]
+    body = bundle.get(language) or bundle[Language.UZ_LATIN]
+    return body.format(**context) if context else body

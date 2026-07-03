@@ -6,10 +6,10 @@ import logging
 from typing import Any
 
 from apps.accounts.language import detect_language
-from apps.bot.handlers.constants import UNKNOWN_COMMAND
 from apps.bot.handlers.help import send_help
 from apps.bot.handlers.start import send_start
 from apps.bot.telegram import get_bot
+from apps.bot.templates import render_template
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ async def _send_unknown_command(update: dict[str, Any]) -> None:
     text: str = message.get("text") or ""
     if chat_id is None:
         return
-    body = UNKNOWN_COMMAND[detect_language(text)]
+    body = render_template("unknown_command", detect_language(text))
     bot = get_bot()
     await bot.send_message(chat_id=chat_id, text=body)
 

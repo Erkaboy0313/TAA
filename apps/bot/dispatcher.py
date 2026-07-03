@@ -8,11 +8,11 @@ from typing import Any
 from apps.accounts.language import detect_language
 from apps.bot.handlers.callback import handle_callback_query
 from apps.bot.handlers.commands import handle_command
-from apps.bot.handlers.constants import RATE_LIMIT_TEXT
 from apps.bot.handlers.text import handle_text_message
 from apps.bot.handlers.voice import handle_voice_message
 from apps.bot.rate_limit import Kind, check_and_bump
 from apps.bot.telegram import get_bot
+from apps.bot.templates import render_template
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ async def _reject_with_message(update: dict[str, Any]) -> None:
         return
     message = update.get("message") or update.get("edited_message") or {}
     text: str = message.get("text") or ""
-    body = RATE_LIMIT_TEXT[detect_language(text)]
+    body = render_template("rate_limit", detect_language(text))
     bot = get_bot()
     await bot.send_message(chat_id=chat_id, text=body)
 

@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from apps.accounts.constants import Language
-from apps.bot.handlers.constants import START_TEXT
+from apps.bot.templates import render_template
 
 UPDATE_ID = 777
 
@@ -42,7 +42,9 @@ async def test_send_start_replies_with_uz_latin_body_for_latin_text(bot_stub: As
 
     await send_start(_make_update("/start"))
 
-    bot_stub.send_message.assert_awaited_once_with(chat_id=42, text=START_TEXT[Language.UZ_LATIN])
+    bot_stub.send_message.assert_awaited_once_with(
+        chat_id=42, text=render_template("start", Language.UZ_LATIN)
+    )
 
 
 @pytest.mark.asyncio
@@ -54,7 +56,7 @@ async def test_send_start_replies_with_uz_cyrillic_body_for_uz_cyrillic_text(
     await send_start(_make_update("/start ёрдам ўзим"))
 
     bot_stub.send_message.assert_awaited_once_with(
-        chat_id=42, text=START_TEXT[Language.UZ_CYRILLIC]
+        chat_id=42, text=render_template("start", Language.UZ_CYRILLIC)
     )
 
 
@@ -64,7 +66,9 @@ async def test_send_start_replies_with_russian_body_for_russian_text(bot_stub: A
 
     await send_start(_make_update("/start помоги"))
 
-    bot_stub.send_message.assert_awaited_once_with(chat_id=42, text=START_TEXT[Language.RUSSIAN])
+    bot_stub.send_message.assert_awaited_once_with(
+        chat_id=42, text=render_template("start", Language.RUSSIAN)
+    )
 
 
 @pytest.mark.asyncio
@@ -73,7 +77,9 @@ async def test_send_start_handles_edited_message_variant(bot_stub: AsyncMock) ->
 
     await send_start(_make_update("/start", edited=True))
 
-    bot_stub.send_message.assert_awaited_once_with(chat_id=42, text=START_TEXT[Language.UZ_LATIN])
+    bot_stub.send_message.assert_awaited_once_with(
+        chat_id=42, text=render_template("start", Language.UZ_LATIN)
+    )
 
 
 @pytest.mark.asyncio
