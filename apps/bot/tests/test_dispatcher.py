@@ -292,3 +292,61 @@ async def test_dispatch_skips_rate_limit_when_from_id_missing(
     await dispatch_update(update)
     stubs["text"].assert_awaited_once()
     _allow_all_rate_limits.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_dispatch_logs_exception_and_apologises_when_handler_fails(
+    stubs: dict[str, AsyncMock],
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A crashing handler must NOT bubble up — the dispatcher logs the
+    exception with a full traceback and sends a friendly apology so the
+    webhook still returns 200 to Telegram."""
+    from apps.bot.dispatcher import dispatch_update
+
+    chat_id = 7
+    stubs["text"].side_effect = RuntimeError("boom")
+    bot = AsyncMock()
+    bot.send_message = AsyncMock(return_value=None)
+    monkeypatch.setattr("apps.bot.dispatcher.get_bot", lambda: bot)
+
+    update = {
+        "update_id": 902,
+        "message": {"text": "hi", "chat": {"id": chat_id, "type": "private"}},
+    }
+    with caplog.at_level(logging.ERROR, logger="apps.bot.dispatcher"):
+        await dispatch_update(update)
+
+    stubs["text"].assert_awaited_once()
+    bot.send_message.assert_awaited_once()
+    assert bot.send_message.await_args.kwargs["chat_id"] == chat_id
+    assert any(r.message == "bot.dispatch.handler_failed" for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_dispatch_swallows_secondary_failure_in_apology(
+    stubs: dict[str, AsyncMock],
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """If even the apology send fails, log and move on — do not re-raise."""
+    from apps.bot.dispatcher import dispatch_update
+
+    stubs["text"].side_effect = RuntimeError("boom")
+    bot = AsyncMock()
+    bot.send_message = AsyncMock(side_effect=RuntimeError("telegram down"))
+    monkeypatch.setattr("apps.bot.dispatcher.get_bot", lambda: bot)
+
+    update = {
+        "update_id": 903,
+        "message": {"text": "hi", "chat": {"id": 7, "type": "private"}},
+    }
+    with caplog.at_level(logging.ERROR, logger="apps.bot.dispatcher"):
+        await dispatch_update(update)
+
+    # Both the original handler failure and the apology failure got logged.
+    handler_failed = [r for r in caplog.records if r.message == "bot.dispatch.handler_failed"]
+    apology_failed = [r for r in caplog.records if r.message == "bot.dispatch.apology_send_failed"]
+    assert len(handler_failed) == 1
+    assert len(apology_failed) == 1
