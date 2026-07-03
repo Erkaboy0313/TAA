@@ -1,12 +1,16 @@
-"""RAG synthesis service (E03-S04 + E03-S05).
+"""RAG synthesis service (E03-S04 + E03-S05 + E02 no-hallucination).
 
 ``answer_question`` is the async entrypoint used by the bot handlers.
-It embeds the query, retrieves top-K chunks, prompts Gemini, extracts
-citations from ``[#N]`` markers, and applies a MVP ban-list warning
-(project-context R10; full rewriting lands in E03-S07).
+It embeds the query, retrieves top-K chunks, checks the closest chunk
+against ``settings.RAG_MAX_DISTANCE`` -- if that best-chunk distance
+is too high the question is off-topic and Gemini is NEVER called.
 
-Every real Gemini call is wrapped in the same retry + timeout envelope
-as ``apps/voice/gemini.py`` (project-context R9).
+When we do call Gemini, the strict-grounding prompt forces the model
+to emit ``NEEDS_CONTEXT`` if the CONTEXT does not answer the question;
+we translate that sentinel into the same off-topic refusal path.
+
+Every Gemini call is wrapped in the same retry + timeout envelope as
+``apps/voice/gemini.py`` (project-context R9).
 """
 
 from __future__ import annotations
@@ -33,8 +37,8 @@ from django.conf import settings
 
 from apps.corpus.embeddings import GeminiEmbeddingProvider
 from apps.rag.exceptions import RagError, SynthesisError
-from apps.rag.prompts import DISCLAIMER, SYSTEM_PROMPT_V1, build_prompt
-from apps.rag.selectors import DEFAULT_TOP_K, search_similar_chunks
+from apps.rag.prompts import DISCLAIMER, NEEDS_CONTEXT_TOKEN, SYSTEM_PROMPT_V2, build_prompt
+from apps.rag.selectors import search_similar_chunks
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -47,8 +51,8 @@ _SYNTHESIS_MODEL = "gemini-2.0-flash"
 _RETRYABLE = retry_if_exception_type(httpx.HTTPError)
 _CITATION_PATTERN = re.compile(r"\[#(\d+)\]")
 
-# MVP ban-list — a full rewriting post-processor is E03-S07. For now we
-# only log a warning so operators notice regressions in the prompt
+# MVP ban-list -- a full rewriting post-processor is E03-S07. For now we
+# only log a warning so operators notice regressions in prompt
 # adherence without blocking user replies (spec says pass-through).
 _BAN_PHRASES: tuple[str, ...] = (
     "men tavsiya qilaman",
@@ -59,20 +63,22 @@ _BAN_PHRASES: tuple[str, ...] = (
     "выберите X",
 )
 
-_FALLBACK_NO_CONTEXT: str = "Ma'lumotim yo'q."
-
 
 @dataclass
 class RagAnswer:
     """Structured result returned by ``answer_question``.
 
-    ``citations`` and ``chunk_ids`` are kept as parallel ordered lists so
-    the bot layer can render the answer without touching the ORM again.
+    ``off_topic`` is set when either (a) the best-chunk distance
+    exceeded ``settings.RAG_MAX_DISTANCE`` and Gemini was never called,
+    or (b) Gemini itself replied ``NEEDS_CONTEXT``. The bot handler
+    renders the ``rag_off_topic`` template in that case instead of
+    ``text`` (which is left as an empty string).
     """
 
     text: str
     citations: list[str] = field(default_factory=list)
     chunk_ids: list[int] = field(default_factory=list)
+    off_topic: bool = False
 
 
 @lru_cache(maxsize=1)
@@ -114,7 +120,7 @@ async def _synthesize(prompt: str) -> str:
     async def _call() -> str:
         response = await client.aio.models.generate_content(
             model=_SYNTHESIS_MODEL,
-            contents=[SYSTEM_PROMPT_V1, prompt],
+            contents=[SYSTEM_PROMPT_V2, prompt],
         )
         return (response.text or "").strip()
 
@@ -130,7 +136,7 @@ def _extract_citations(text: str, chunks: list[Chunk]) -> tuple[list[str], list[
     """Return ordered, de-duplicated ``(source_urls, chunk_ids)`` cited by ``text``.
 
     Any ``[#N]`` marker outside the range of the retrieved chunk list is
-    silently skipped — Gemini occasionally invents markers, and we would
+    silently skipped -- Gemini occasionally invents markers, and we would
     rather drop the phantom citation than raise on it.
     """
     citations: list[str] = []
@@ -168,8 +174,32 @@ def _append_disclaimer(text: str) -> str:
     return f"{stripped}\n\n{DISCLAIMER}"
 
 
+def _off_topic_answer() -> RagAnswer:
+    """The bot layer renders ``rag_off_topic`` when this is returned."""
+    return RagAnswer(text="", off_topic=True)
+
+
+def _best_distance(chunks: list[Chunk]) -> float | None:
+    """Smallest cosine distance across the top-K, or ``None`` if unset.
+
+    ``search_similar_chunks`` annotates each chunk with ``distance``,
+    but tests using fake chunks may omit the attribute -- treat that
+    as ``None`` and skip the threshold guard.
+    """
+    distances = [getattr(c, "distance", None) for c in chunks]
+    real = [d for d in distances if d is not None]
+    return min(real) if real else None
+
+
 async def answer_question(question: str) -> RagAnswer:
-    """Embed → retrieve → synthesise → parse citations → append disclaimer."""
+    """Embed -> retrieve -> distance guard -> synthesise -> parse citations.
+
+    The pipeline short-circuits before Gemini in two places:
+
+    * empty retrieval -> off-topic;
+    * best-chunk cosine distance > ``settings.RAG_MAX_DISTANCE`` ->
+      off-topic (this is the *hard* no-hallucination gate).
+    """
     embedding_provider = GeminiEmbeddingProvider()
     vectors = await embedding_provider.embed([question])
     if not vectors:
@@ -177,14 +207,27 @@ async def answer_question(question: str) -> RagAnswer:
     query_vector = vectors[0]
 
     chunks = await sync_to_async(search_similar_chunks, thread_sensitive=True)(
-        query_vector, DEFAULT_TOP_K
+        query_vector, settings.RAG_TOP_K
     )
 
     if not chunks:
-        return RagAnswer(text=_append_disclaimer(_FALLBACK_NO_CONTEXT))
+        logger.info("rag.off_topic", extra={"reason": "no_chunks"})
+        return _off_topic_answer()
+
+    best = _best_distance(chunks)
+    if best is not None and best > settings.RAG_MAX_DISTANCE:
+        logger.info(
+            "rag.off_topic",
+            extra={"reason": "distance_threshold", "best_distance": best},
+        )
+        return _off_topic_answer()
 
     prompt = build_prompt(question, chunks)
     raw_answer = await _synthesize(prompt)
+    if raw_answer.strip() == NEEDS_CONTEXT_TOKEN:
+        logger.info("rag.off_topic", extra={"reason": "needs_context_token"})
+        return _off_topic_answer()
+
     _check_ban_list(raw_answer)
     citations, chunk_ids = _extract_citations(raw_answer, chunks)
     final_text = _append_disclaimer(raw_answer)

@@ -152,6 +152,24 @@ _RAG_FAILED_UZ_LATIN = "😔 Javob berolmadim. Yana urunib ko'ring."
 _RAG_FAILED_UZ_CYRILLIC = "😔 Жавоб беролмадим. Яна уруниб кўринг."
 _RAG_FAILED_RUSSIAN = "😔 Не удалось ответить. Попробуйте ещё раз."
 
+# ------------------------- RAG off-topic (no-hallucination refusal) ------------------------- #
+# Sent when the retriever's best chunk is too far from the query, or when
+# Gemini itself emits the ``NEEDS_CONTEXT`` sentinel. We refuse politely
+# rather than fabricate an answer (E02 no-hallucination rule).
+
+_RAG_OFF_TOPIC_UZ_LATIN = (
+    "Kechirasiz, bu savol Soliq Kodeksiga tegishli qismini topolmadim. "
+    "Boshqacha so'z bilan qayta bering yoki soliq bo'yicha aniq bir moddani so'rang."
+)
+_RAG_OFF_TOPIC_UZ_CYRILLIC = (
+    "Кечирасиз, бу савол Солиқ Кодексига тегишли қисмини тополмадим. "
+    "Бошқача сўз билан қайта беринг ёки солиқ бўйича аниқ бир моддани сўранг."
+)
+_RAG_OFF_TOPIC_RUSSIAN = (
+    "Извините, я не нашёл ответа на этот вопрос в Налоговом кодексе. "
+    "Переформулируйте вопрос или уточните конкретную статью налогового законодательства."
+)
+
 
 TEMPLATES: dict[str, dict[str, str]] = {
     "help": {
@@ -198,6 +216,11 @@ TEMPLATES: dict[str, dict[str, str]] = {
         Language.UZ_LATIN: _RAG_FAILED_UZ_LATIN,
         Language.UZ_CYRILLIC: _RAG_FAILED_UZ_CYRILLIC,
         Language.RUSSIAN: _RAG_FAILED_RUSSIAN,
+    },
+    "rag_off_topic": {
+        Language.UZ_LATIN: _RAG_OFF_TOPIC_UZ_LATIN,
+        Language.UZ_CYRILLIC: _RAG_OFF_TOPIC_UZ_CYRILLIC,
+        Language.RUSSIAN: _RAG_OFF_TOPIC_RUSSIAN,
     },
 }
 

@@ -112,6 +112,10 @@ async def handle_voice_message(update: dict[str, Any]) -> None:
         await _send(chat_id, "rag_failed", language)
         return
 
+    if answer.off_topic:
+        await _send(chat_id, "rag_off_topic", language)
+        return
+
     await _send(
         chat_id,
         "voice_answer",

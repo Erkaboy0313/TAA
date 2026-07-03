@@ -1,11 +1,11 @@
-# TAA developer shortcuts. All heavy commands run inside the docker compose stack
+﻿# TAA developer shortcuts. All heavy commands run inside the docker compose stack
 # so host tooling stays minimal (only docker + git required).
 #
 # `make help` lists targets. Every target is idempotent unless noted.
 
 .DEFAULT_GOAL := help
 .PHONY: help dev up down restart logs ps shell migrate makemigrations \
-        test cov lint fmt check precommit-install rebuild clean
+        test cov lint fmt check precommit-install rebuild clean ingest-tax-code
 
 COMPOSE ?= docker compose
 APP     ?= app
@@ -62,3 +62,7 @@ rebuild:  ## Rebuild container images (after Dockerfile / requirements changes).
 
 clean:  ## Stop containers AND drop volumes (destructive — DB wiped).
 	$(COMPOSE) down -v
+
+ingest-tax-code:  ## Fetch + ingest the full Uzbek Tax Code (needs GEMINI_API_KEY).
+	$(COMPOSE) exec $(APP) python manage.py ingest_lex_uz
+

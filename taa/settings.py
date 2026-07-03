@@ -39,6 +39,14 @@ TELEGRAM_WEBHOOK_SECRET: str = config("TELEGRAM_WEBHOOK_SECRET", default="")
 GEMINI_API_KEY: str = config("GEMINI_API_KEY", default="")
 GEMINI_TIMEOUT_SECONDS: int = config("GEMINI_TIMEOUT_SECONDS", default=30, cast=int)
 
+# RAG no-hallucination guard. Any retrieved chunk whose cosine distance
+# from the query embedding exceeds `RAG_MAX_DISTANCE` is treated as
+# irrelevant -- if the *best* match is above the threshold we refuse
+# instead of calling Gemini (E02 no-hallucination epic). `RAG_TOP_K` is
+# the retrieval budget passed to the pgvector selector.
+RAG_MAX_DISTANCE: float = config("RAG_MAX_DISTANCE", default=0.55, cast=float)
+RAG_TOP_K: int = config("RAG_TOP_K", default=6, cast=int)
+
 # ---------------------------------------------------------------------------
 # Applications
 # ---------------------------------------------------------------------------
