@@ -109,3 +109,13 @@ START_TEXT: dict[str, str] = {
     Language.UZ_CYRILLIC: _START_UZ_CYRILLIC,
     Language.RUSSIAN: _START_RUSSIAN,
 }
+
+_RATE_LIMIT_UZ_LATIN = "⏳ Juda ko'p so'rov. Bir daqiqa kuting va qayta urining."
+_RATE_LIMIT_UZ_CYRILLIC = "⏳ Жуда кўп сўров. Бир дақиқа кутинг ва қайта уриниб кўринг."
+_RATE_LIMIT_RUSSIAN = "⏳ Слишком много запросов. Подождите минуту и попробуйте снова."
+
+RATE_LIMIT_TEXT: dict[str, str] = {
+    Language.UZ_LATIN: _RATE_LIMIT_UZ_LATIN,
+    Language.UZ_CYRILLIC: _RATE_LIMIT_UZ_CYRILLIC,
+    Language.RUSSIAN: _RATE_LIMIT_RUSSIAN,
+}

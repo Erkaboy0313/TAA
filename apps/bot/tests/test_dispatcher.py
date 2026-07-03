@@ -20,6 +20,20 @@ UNHANDLED_UPDATE_ID = 42
 COMMAND_LOG_UPDATE_ID = 99
 
 
+@pytest.fixture(autouse=True)
+def _allow_all_rate_limits(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+    """Bypass the rate limiter in every dispatcher test.
+
+    E05-S07 wired ``check_and_bump`` into the router; these tests concern
+    the routing table itself, not throttling. Rate-limit behavior is
+    covered separately in ``test_rate_limit.py`` and the reject-path
+    tests below.
+    """
+    stub = AsyncMock(return_value=True)
+    monkeypatch.setattr("apps.bot.dispatcher.check_and_bump", stub)
+    return stub
+
+
 @pytest.fixture
 def stubs(monkeypatch: pytest.MonkeyPatch) -> dict[str, AsyncMock]:
     """Patch the four handler symbols the router imports.
@@ -230,3 +244,51 @@ async def test_command_handler_logs_command_name_in_extras(
     assert len(matches) == 1
     assert matches[0].command == "help"
     assert matches[0].update_id == COMMAND_LOG_UPDATE_ID
+
+
+@pytest.mark.asyncio
+async def test_dispatch_rejects_when_rate_limit_says_no(
+    stubs: dict[str, AsyncMock],
+    monkeypatch: pytest.MonkeyPatch,
+    _allow_all_rate_limits: AsyncMock,
+) -> None:
+    """When ``check_and_bump`` returns False, no handler is called and the
+    user gets a friendly reject message via ``get_bot().send_message``."""
+    from apps.bot.dispatcher import dispatch_update
+
+    _allow_all_rate_limits.return_value = False
+    bot = AsyncMock()
+    bot.send_message = AsyncMock(return_value=None)
+    monkeypatch.setattr("apps.bot.dispatcher.get_bot", lambda: bot)
+
+    telegram_id = 12345
+    update = {
+        "update_id": 900,
+        "message": {
+            "text": "Salom",
+            "from": {"id": telegram_id, "is_bot": False},
+            "chat": {"id": telegram_id, "type": "private"},
+        },
+    }
+    await dispatch_update(update)
+
+    for stub in stubs.values():
+        stub.assert_not_awaited()
+    bot.send_message.assert_awaited_once()
+    assert bot.send_message.await_args.kwargs["chat_id"] == telegram_id
+
+
+@pytest.mark.asyncio
+async def test_dispatch_skips_rate_limit_when_from_id_missing(
+    stubs: dict[str, AsyncMock],
+    _allow_all_rate_limits: AsyncMock,
+) -> None:
+    """Updates without a ``from.id`` (rare, but possible for anonymous
+    channel posts) bypass the rate limiter entirely — otherwise all such
+    updates would share a single bucket keyed on None."""
+    from apps.bot.dispatcher import dispatch_update
+
+    update = {"update_id": 901, "message": {"text": "hi"}}
+    await dispatch_update(update)
+    stubs["text"].assert_awaited_once()
+    _allow_all_rate_limits.assert_not_awaited()
