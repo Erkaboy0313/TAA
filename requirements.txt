@@ -43,3 +43,8 @@ httpx>=0.28,<0.29
 # §5, R9: 3x exp backoff, 30s overall timeout). Only used at the Gemini
 # boundary — R6 forbids adding retry helpers elsewhere.
 tenacity>=9.0,<10.0
+
+# pgvector Django integration — VectorField + HnswIndex + VectorExtension migration.
+# Postgres side of the extension is enabled by the E02-S01 initial migration
+# (architecture §4). Vector store choice justified in project-context §2.
+pgvector>=0.3,<1.0
