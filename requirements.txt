@@ -48,3 +48,9 @@ tenacity>=9.0,<10.0
 # Postgres side of the extension is enabled by the E02-S01 initial migration
 # (architecture §4). Vector store choice justified in project-context §2.
 pgvector>=0.3,<1.0
+
+# lex.uz Tax Code scraper (E02 real ingest). BeautifulSoup drives the DOM
+# walk; lxml is the fast C-backed parser it delegates to. Both are confined
+# to `apps.corpus.scrapers` — R6 forbids adding HTML parsing elsewhere.
+beautifulsoup4>=4.12,<5.0
+lxml>=5.3,<6.0

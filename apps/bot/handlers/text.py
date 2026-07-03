@@ -87,4 +87,8 @@ async def handle_text_message(update: dict[str, Any]) -> None:
         await _send(chat_id, render_template("rag_failed", language))
         return
 
+    if answer.off_topic:
+        await _send(chat_id, render_template("rag_off_topic", language))
+        return
+
     await _send(chat_id, answer.text)

@@ -77,3 +77,7 @@ package-lock.json
 # --- Project-specific ---
 # Do NOT ignore .claude/agents/*.md (devops.md, tester.md) — those are versioned
 # Do NOT ignore docs/*.md
+
+# Ingested-corpus caches (lex.uz HTML, embedding scratch). Real content
+# stays out of git per project-context R10 and lex.uz redistribution policy.
+data/
