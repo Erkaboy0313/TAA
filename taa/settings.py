@@ -46,6 +46,7 @@ INSTALLED_APPS: list[str] = [
     "apps.core",
     "apps.accounts",
     "apps.bot",
+    "apps.voice",
 ]
 
 MIDDLEWARE: list[str] = [
