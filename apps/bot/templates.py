@@ -141,8 +141,12 @@ TEMPLATES: dict[str, dict[str, str]] = {
 }
 
 
-def render_template(name: str, language: str, **context: str) -> str:
+def render_template(name: str, language: str, /, **context: str) -> str:
     """Return a rendered bot response.
+
+    `name` and `language` are positional-only so callers can pass
+    `name="Aziza"` as a template context variable without colliding with
+    the template selector.
 
     Falls back to Uzbek-Latin if `language` is not in the bundle. If
     `context` is empty the raw string is returned unchanged, avoiding
