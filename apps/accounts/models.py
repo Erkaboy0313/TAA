@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
 from functools import cached_property
 
 from django.db import models
 
 from apps.accounts.constants import CurrentStatus, Language, OnboardingStep, Regime
+from apps.accounts.hashing import hash_telegram_id
 from apps.core.models import TimestampedModel
 
 
@@ -38,8 +38,7 @@ class User(TimestampedModel):
     @cached_property
     def telegram_id_hash(self) -> str:
         """8-char SHA-256 prefix of the telegram id, safe to log (R10 PII)."""
-        digest = hashlib.sha256(str(self.telegram_id).encode("utf-8")).hexdigest()
-        return digest[:8]
+        return hash_telegram_id(self.telegram_id)
 
 
 class EntrepreneurProfile(TimestampedModel):
