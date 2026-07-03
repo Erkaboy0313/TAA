@@ -32,6 +32,13 @@ ADMIN_ENABLED: bool = config("ADMIN_ENABLED", default=DEBUG, cast=bool)
 TELEGRAM_BOT_TOKEN: str = config("TELEGRAM_BOT_TOKEN", default="")
 TELEGRAM_WEBHOOK_SECRET: str = config("TELEGRAM_WEBHOOK_SECRET", default="")
 
+# Gemini (E04-S02/S03/S04). Empty default lets tests import Django without
+# credentials; `apps.voice.gemini._client()` raises VoiceError at first call
+# if the key is unset. Overall deadline (R9: 30s) wraps the retry loop so a
+# stuck request cannot exceed the user-facing latency budget (architecture §11).
+GEMINI_API_KEY: str = config("GEMINI_API_KEY", default="")
+GEMINI_TIMEOUT_SECONDS: int = config("GEMINI_TIMEOUT_SECONDS", default=30, cast=int)
+
 # ---------------------------------------------------------------------------
 # Applications
 # ---------------------------------------------------------------------------

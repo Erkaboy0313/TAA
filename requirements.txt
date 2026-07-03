@@ -29,3 +29,17 @@ redis>=5.0,<6.0
 
 # Telegram bot SDK. Webhook mode; async — matches R9 voice endpoints.
 python-telegram-bot>=21.6,<22.0
+
+# Gemini SDK — unified STT + TTS + LLM provider (architecture §5). Pinned <1.0
+# because 0.x is still shaping its public API; upgrade PR when 1.x lands.
+google-genai>=0.7,<1.0
+
+# Async HTTP client used underneath the Gemini SDK for streaming responses
+# (architecture §5). Also the retry target for tenacity — the SDK raises
+# httpx.HTTPError on transient network failures.
+httpx>=0.28,<0.29
+
+# Retry with exponential backoff for Gemini transient failures (architecture
+# §5, R9: 3x exp backoff, 30s overall timeout). Only used at the Gemini
+# boundary — R6 forbids adding retry helpers elsewhere.
+tenacity>=9.0,<10.0
