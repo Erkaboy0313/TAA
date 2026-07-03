@@ -28,6 +28,7 @@ from itertools import islice
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction as db_transaction
@@ -198,7 +199,7 @@ class Command(BaseCommand):
             )
             return document
 
-        return await asyncio.to_thread(_sync)
+        return await sync_to_async(_sync, thread_sensitive=True)()
 
     async def _ingest_section(
         self,
@@ -258,7 +259,7 @@ class Command(BaseCommand):
                 out[chunk.article_ref] = _chunk_fingerprint(chunk.article_ref, chunk.content)
             return out
 
-        return await asyncio.to_thread(_sync)
+        return await sync_to_async(_sync, thread_sensitive=True)()
 
     async def _persist_chunks(
         self,
@@ -285,7 +286,7 @@ class Command(BaseCommand):
             return len(rows)
 
         try:
-            return await asyncio.to_thread(_sync)
+            return await sync_to_async(_sync, thread_sensitive=True)()
         except CorpusError:
             raise
         except Exception as exc:  # pragma: no cover -- DB errors bubble up here
