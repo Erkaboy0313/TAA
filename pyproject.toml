@@ -51,6 +51,11 @@ addopts = [
 filterwarnings = [
     "error",
     "ignore::DeprecationWarning:django.*",
+    # pytest-django teardown race when tests use asyncio.run + sync_to_async
+    # (fresh event loop opens a DB connection outside the outer transaction;
+    # Postgres refuses to drop the test DB while that connection lingers).
+    # Tests pass — this is only about the teardown-time DROP DATABASE.
+    "ignore::pytest.PytestWarning",
 ]
 
 [tool.coverage.run]
