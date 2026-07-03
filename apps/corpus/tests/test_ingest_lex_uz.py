@@ -48,6 +48,24 @@ def _articles() -> list[ParsedArticle]:
 _EXPECTED_INGEST_CHUNKS: int = 2
 
 
+@pytest.fixture(autouse=True)
+def _cleanup_corpus_tables(db):  # noqa: ARG001 -- db triggers pytest-django setup
+    """Guarantee corpus tables are empty at the start of every test in this file.
+
+    ``asyncio.run`` inside the ingest command opens a fresh event loop; even with
+    ``sync_to_async(thread_sensitive=True)`` the resulting Django ORM writes land
+    outside pytest-django's transaction wrapper. That leaks Documents across
+    tests. We explicitly truncate before every test to guarantee isolation.
+    """
+    from django.db import connection
+
+    with connection.cursor() as cur:
+        cur.execute("TRUNCATE TABLE corpus_chunk, corpus_document RESTART IDENTITY CASCADE;")
+    yield
+    with connection.cursor() as cur:
+        cur.execute("TRUNCATE TABLE corpus_chunk, corpus_document RESTART IDENTITY CASCADE;")
+
+
 def _vector(seed: float) -> list[float]:
     return [seed] * EMBEDDING_DIMENSIONS
 
