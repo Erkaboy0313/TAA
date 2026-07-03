@@ -1,14 +1,17 @@
-"""Voice-message handler — download → Gemini STT → echo transcript.
+"""Voice-message handler — download → Gemini STT → RAG answer.
 
-This is the smoke-test wire-up for E04-S06. Real RAG routing lands in a
-later story; for now we transcribe the audio and echo it back in the
-user's language so we can validate the pipeline end-to-end.
+Wire-up for E04-S06 + E03-S11. Rules enforced here (project-context R9):
 
-Rules enforced here (project-context R9):
 - audio bytes stay in local scope; never written to disk, never logged
 - no user text logged (privacy — R10)
 - Gemini timeout inherited from the provider; Telegram download bounded
   by ``_DOWNLOAD_TIMEOUT_SECONDS``
+
+Flow: transcript replaces the old echo. We call :func:`answer_question`
+with the transcript, then send a combined message that shows the user
+what we heard AND the RAG answer via the ``voice_answer`` template. A
+``VoiceError`` (STT) falls back to ``voice_failed``; a ``RagError``
+(retrieval / synthesis) falls back to ``rag_failed``.
 """
 
 from __future__ import annotations
@@ -20,6 +23,8 @@ from typing import Any
 from apps.accounts.constants import Language
 from apps.bot.telegram import get_bot
 from apps.bot.templates import render_template
+from apps.rag.exceptions import RagError
+from apps.rag.services import answer_question
 from apps.voice.exceptions import VoiceError
 from apps.voice.gemini import GeminiVoiceProvider
 
@@ -63,16 +68,16 @@ async def _download_audio(file_id: str) -> bytes:
 async def _send(chat_id: int, template_name: str, language: str, **context: str) -> None:
     body = render_template(template_name, language, **context)
     bot = get_bot()
-    await bot.send_message(chat_id=chat_id, text=body)
+    await bot.send_message(chat_id=chat_id, text=body, disable_web_page_preview=True)
 
 
 async def handle_voice_message(update: dict[str, Any]) -> None:
-    """Transcribe the incoming voice message and echo the transcript.
+    """Transcribe the incoming voice message and reply with the RAG answer.
 
-    Any :class:`VoiceError` (which covers ``TranscriptionError``) is
-    caught and translated into a friendly bilingual apology so the user
-    is never left without feedback. Anything else propagates to the
-    dispatcher's global error path.
+    A :class:`VoiceError` (STT failure) translates into ``voice_failed``.
+    A :class:`RagError` (retrieval / synthesis) translates into
+    ``rag_failed``. Anything else propagates to the dispatcher's global
+    error path.
     """
     update_id = update.get("update_id")
     file_id = _file_id(update)
@@ -99,4 +104,18 @@ async def handle_voice_message(update: dict[str, Any]) -> None:
         "bot.handler.voice.transcribed",
         extra={"update_id": update_id, "transcript_len": len(transcript)},
     )
-    await _send(chat_id, "voice_echo", language, transcript=transcript)
+
+    try:
+        answer = await answer_question(transcript)
+    except (RagError, VoiceError):
+        logger.exception("bot.handler.voice.rag_failed", extra={"update_id": update_id})
+        await _send(chat_id, "rag_failed", language)
+        return
+
+    await _send(
+        chat_id,
+        "voice_answer",
+        language,
+        transcript=transcript,
+        answer=answer.text,
+    )

@@ -140,6 +140,18 @@ _VOICE_FAILED_UZ_LATIN = "😔 Ovozni tushuna olmadim. Yana urunib ko'ring."
 _VOICE_FAILED_UZ_CYRILLIC = "😔 Овозни тушуна олмадим. Яна уруниб кўринг."
 _VOICE_FAILED_RUSSIAN = "😔 Не удалось распознать голос. Попробуйте ещё раз."
 
+# ------------------------- Voice answer (STT + RAG) ------------------------- #
+
+_VOICE_ANSWER_UZ_LATIN = "🎙 Sizning savolingiz: {transcript}\n\n{answer}"
+_VOICE_ANSWER_UZ_CYRILLIC = "🎙 Сизнинг саволингиз: {transcript}\n\n{answer}"
+_VOICE_ANSWER_RUSSIAN = "🎙 Ваш вопрос: {transcript}\n\n{answer}"
+
+# ------------------------- RAG failure ------------------------- #
+
+_RAG_FAILED_UZ_LATIN = "😔 Javob berolmadim. Yana urunib ko'ring."
+_RAG_FAILED_UZ_CYRILLIC = "😔 Жавоб беролмадим. Яна уруниб кўринг."
+_RAG_FAILED_RUSSIAN = "😔 Не удалось ответить. Попробуйте ещё раз."
+
 
 TEMPLATES: dict[str, dict[str, str]] = {
     "help": {
@@ -176,6 +188,16 @@ TEMPLATES: dict[str, dict[str, str]] = {
         Language.UZ_LATIN: _VOICE_FAILED_UZ_LATIN,
         Language.UZ_CYRILLIC: _VOICE_FAILED_UZ_CYRILLIC,
         Language.RUSSIAN: _VOICE_FAILED_RUSSIAN,
+    },
+    "voice_answer": {
+        Language.UZ_LATIN: _VOICE_ANSWER_UZ_LATIN,
+        Language.UZ_CYRILLIC: _VOICE_ANSWER_UZ_CYRILLIC,
+        Language.RUSSIAN: _VOICE_ANSWER_RUSSIAN,
+    },
+    "rag_failed": {
+        Language.UZ_LATIN: _RAG_FAILED_UZ_LATIN,
+        Language.UZ_CYRILLIC: _RAG_FAILED_UZ_CYRILLIC,
+        Language.RUSSIAN: _RAG_FAILED_RUSSIAN,
     },
 }
 
