@@ -128,6 +128,18 @@ _ERROR_RUSSIAN = (
     "😔 Произошла неожиданная ошибка. Подождите немного и попробуйте снова — мы уже разбираемся."
 )
 
+# ------------------------- Voice echo ------------------------- #
+
+_VOICE_ECHO_UZ_LATIN = "🎙 Sizning savolingiz: {transcript}"
+_VOICE_ECHO_UZ_CYRILLIC = "🎙 Сизнинг саволингиз: {transcript}"
+_VOICE_ECHO_RUSSIAN = "🎙 Ваш вопрос: {transcript}"
+
+# ------------------------- Voice failure ------------------------- #
+
+_VOICE_FAILED_UZ_LATIN = "😔 Ovozni tushuna olmadim. Yana urunib ko'ring."
+_VOICE_FAILED_UZ_CYRILLIC = "😔 Овозни тушуна олмадим. Яна уруниб кўринг."
+_VOICE_FAILED_RUSSIAN = "😔 Не удалось распознать голос. Попробуйте ещё раз."
+
 
 TEMPLATES: dict[str, dict[str, str]] = {
     "help": {
@@ -154,6 +166,16 @@ TEMPLATES: dict[str, dict[str, str]] = {
         Language.UZ_LATIN: _ERROR_UZ_LATIN,
         Language.UZ_CYRILLIC: _ERROR_UZ_CYRILLIC,
         Language.RUSSIAN: _ERROR_RUSSIAN,
+    },
+    "voice_echo": {
+        Language.UZ_LATIN: _VOICE_ECHO_UZ_LATIN,
+        Language.UZ_CYRILLIC: _VOICE_ECHO_UZ_CYRILLIC,
+        Language.RUSSIAN: _VOICE_ECHO_RUSSIAN,
+    },
+    "voice_failed": {
+        Language.UZ_LATIN: _VOICE_FAILED_UZ_LATIN,
+        Language.UZ_CYRILLIC: _VOICE_FAILED_UZ_CYRILLIC,
+        Language.RUSSIAN: _VOICE_FAILED_RUSSIAN,
     },
 }
 
