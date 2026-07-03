@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from asgiref.sync import sync_to_async
+
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction as db_transaction
