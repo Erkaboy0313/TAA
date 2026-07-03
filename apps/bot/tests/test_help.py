@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from apps.accounts.constants import Language
-from apps.bot.handlers.constants import HELP_TEXT, UNKNOWN_COMMAND
+from apps.bot.templates import render_template
 
 UPDATE_ID = 555
 
@@ -42,7 +42,9 @@ async def test_send_help_replies_with_uz_latin_body_for_latin_text(bot_stub: Asy
 
     await send_help(_make_update("/help"))
 
-    bot_stub.send_message.assert_awaited_once_with(chat_id=42, text=HELP_TEXT[Language.UZ_LATIN])
+    bot_stub.send_message.assert_awaited_once_with(
+        chat_id=42, text=render_template("help", Language.UZ_LATIN)
+    )
 
 
 @pytest.mark.asyncio
@@ -53,7 +55,9 @@ async def test_send_help_replies_with_uz_cyrillic_body_for_uz_cyrillic_text(
 
     await send_help(_make_update("/help ёрдам ўзим"))
 
-    bot_stub.send_message.assert_awaited_once_with(chat_id=42, text=HELP_TEXT[Language.UZ_CYRILLIC])
+    bot_stub.send_message.assert_awaited_once_with(
+        chat_id=42, text=render_template("help", Language.UZ_CYRILLIC)
+    )
 
 
 @pytest.mark.asyncio
@@ -62,7 +66,9 @@ async def test_send_help_replies_with_russian_body_for_russian_text(bot_stub: As
 
     await send_help(_make_update("/help помоги мне"))
 
-    bot_stub.send_message.assert_awaited_once_with(chat_id=42, text=HELP_TEXT[Language.RUSSIAN])
+    bot_stub.send_message.assert_awaited_once_with(
+        chat_id=42, text=render_template("help", Language.RUSSIAN)
+    )
 
 
 @pytest.mark.asyncio
@@ -71,7 +77,9 @@ async def test_send_help_handles_edited_message_variant(bot_stub: AsyncMock) -> 
 
     await send_help(_make_update("/help", edited=True))
 
-    bot_stub.send_message.assert_awaited_once_with(chat_id=42, text=HELP_TEXT[Language.UZ_LATIN])
+    bot_stub.send_message.assert_awaited_once_with(
+        chat_id=42, text=render_template("help", Language.UZ_LATIN)
+    )
 
 
 @pytest.mark.asyncio
@@ -111,7 +119,7 @@ async def test_handle_command_replies_unknown_for_gibberish(bot_stub: AsyncMock)
     await handle_command(_make_update("/gibberish"))
 
     bot_stub.send_message.assert_awaited_once_with(
-        chat_id=42, text=UNKNOWN_COMMAND[Language.UZ_LATIN]
+        chat_id=42, text=render_template("unknown_command", Language.UZ_LATIN)
     )
 
 
