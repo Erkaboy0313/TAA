@@ -40,15 +40,32 @@ def _chat_id(update: dict[str, Any]) -> int | None:
     return chat_id if isinstance(chat_id, int) else None
 
 
-async def _reject_with_message(update: dict[str, Any]) -> None:
+async def _send_language_aware(update: dict[str, Any], template_name: str) -> None:
     chat_id = _chat_id(update)
     if chat_id is None:
         return
     message = update.get("message") or update.get("edited_message") or {}
     text: str = message.get("text") or ""
-    body = render_template("rate_limit", detect_language(text))
+    body = render_template(template_name, detect_language(text))
     bot = get_bot()
     await bot.send_message(chat_id=chat_id, text=body)
+
+
+async def _reject_with_message(update: dict[str, Any]) -> None:
+    await _send_language_aware(update, "rate_limit")
+
+
+async def _apologise_with_message(update: dict[str, Any]) -> None:
+    """Best-effort friendly error notice — swallow follow-on failures."""
+    try:
+        await _send_language_aware(update, "unexpected_error")
+    except Exception:  # noqa: BLE001
+        # If we cannot even send the apology (Telegram down, bot mis-
+        # configured, etc.), swallow and rely on server-side logs.
+        logger.exception(
+            "bot.dispatch.apology_send_failed",
+            extra={"update_id": update.get("update_id")},
+        )
 
 
 def _classify(update: dict[str, Any]) -> Kind | None:
@@ -90,20 +107,31 @@ async def dispatch_update(update: dict[str, Any]) -> None:
             await _reject_with_message(update)
             return
 
-    if kind == "voice":
-        await handle_voice_message(update)
-        return
+    try:
+        if kind == "voice":
+            await handle_voice_message(update)
+            return
 
-    message = update.get("message") or update.get("edited_message") or {}
-    text = message.get("text")
+        message = update.get("message") or update.get("edited_message") or {}
+        text = message.get("text")
 
-    if isinstance(text, str) and text.startswith("/"):
-        await handle_command(update)
-        return
+        if isinstance(text, str) and text.startswith("/"):
+            await handle_command(update)
+            return
 
-    if isinstance(text, str) and text:
-        await handle_text_message(update)
-        return
+        if isinstance(text, str) and text:
+            await handle_text_message(update)
+            return
 
-    if "callback_query" in update:
-        await handle_callback_query(update)
+        if "callback_query" in update:
+            await handle_callback_query(update)
+    except Exception:  # noqa: BLE001
+        # Any handler failure — service outages, malformed remote responses,
+        # code bugs — gets logged with a full traceback and answered with a
+        # friendly language-aware apology. The webhook view still returns
+        # 200 so Telegram does not retry indefinitely.
+        logger.exception(
+            "bot.dispatch.handler_failed",
+            extra={"update_id": update.get("update_id"), "kind": kind},
+        )
+        await _apologise_with_message(update)

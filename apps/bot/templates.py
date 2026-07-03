@@ -116,6 +116,18 @@ _RATE_LIMIT_UZ_LATIN = "⏳ Juda ko'p so'rov. Bir daqiqa kuting va qayta urining
 _RATE_LIMIT_UZ_CYRILLIC = "⏳ Жуда кўп сўров. Бир дақиқа кутинг ва қайта уриниб кўринг."
 _RATE_LIMIT_RUSSIAN = "⏳ Слишком много запросов. Подождите минуту и попробуйте снова."
 
+# ------------------------- Unexpected error ------------------------- #
+
+_ERROR_UZ_LATIN = (
+    "😔 Kutilmagan xatolik yuz berdi. Biroz kutib qayta urining — muammo tez orada hal bo'ladi."
+)
+_ERROR_UZ_CYRILLIC = (
+    "😔 Кутилмаган хатолик юз берди. Бироз кутиб қайта уриниб кўринг — муаммо тез орада ҳал бўлади."
+)
+_ERROR_RUSSIAN = (
+    "😔 Произошла неожиданная ошибка. Подождите немного и попробуйте снова — мы уже разбираемся."
+)
+
 
 TEMPLATES: dict[str, dict[str, str]] = {
     "help": {
@@ -137,6 +149,11 @@ TEMPLATES: dict[str, dict[str, str]] = {
         Language.UZ_LATIN: _RATE_LIMIT_UZ_LATIN,
         Language.UZ_CYRILLIC: _RATE_LIMIT_UZ_CYRILLIC,
         Language.RUSSIAN: _RATE_LIMIT_RUSSIAN,
+    },
+    "unexpected_error": {
+        Language.UZ_LATIN: _ERROR_UZ_LATIN,
+        Language.UZ_CYRILLIC: _ERROR_UZ_CYRILLIC,
+        Language.RUSSIAN: _ERROR_RUSSIAN,
     },
 }
 
