@@ -47,23 +47,12 @@ def _articles() -> list[ParsedArticle]:
 
 _EXPECTED_INGEST_CHUNKS: int = 2
 
-
-@pytest.fixture(autouse=True)
-def _cleanup_corpus_tables(db):  # noqa: ARG001 -- db triggers pytest-django setup
-    """Guarantee corpus tables are empty at the start of every test in this file.
-
-    ``asyncio.run`` inside the ingest command opens a fresh event loop; even with
-    ``sync_to_async(thread_sensitive=True)`` the resulting Django ORM writes land
-    outside pytest-django's transaction wrapper. That leaks Documents across
-    tests. We explicitly truncate before every test to guarantee isolation.
-    """
-    from django.db import connection
-
-    with connection.cursor() as cur:
-        cur.execute("TRUNCATE TABLE corpus_chunk, corpus_document RESTART IDENTITY CASCADE;")
-    yield
-    with connection.cursor() as cur:
-        cur.execute("TRUNCATE TABLE corpus_chunk, corpus_document RESTART IDENTITY CASCADE;")
+# Module-wide: use pytest-django's `transaction=True` mode so the outer test
+# transaction is a real one that gets flushed between tests. asyncio.run inside
+# the ingest command opens a fresh event loop whose ORM connection lives
+# outside a savepoint; the flush path is the only pytest-django mechanism that
+# reliably scrubs those leaks.
+pytestmark = pytest.mark.django_db(transaction=True)
 
 
 def _vector(seed: float) -> list[float]:
@@ -103,7 +92,6 @@ def gemini_embed_stub(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     return stub
 
 
-@pytest.mark.django_db
 def test_dry_run_prints_stats_without_touching_db(
     patched_scraper: Path,  # noqa: ARG001 -- installs the scraper stub
     settings,
@@ -120,7 +108,6 @@ def test_dry_run_prints_stats_without_touching_db(
     assert Chunk.objects.count() == 0
 
 
-@pytest.mark.django_db
 def test_ingest_lex_uz_persists_documents_and_chunks(
     patched_scraper: Path,
     gemini_embed_stub: AsyncMock,  # noqa: ARG001 -- installs the embed stub
@@ -141,7 +128,6 @@ def test_ingest_lex_uz_persists_documents_and_chunks(
     assert refs == ["1", "2"]
 
 
-@pytest.mark.django_db
 def test_ingest_lex_uz_is_idempotent(
     patched_scraper: Path,
     gemini_embed_stub: AsyncMock,
@@ -169,7 +155,6 @@ def test_ingest_lex_uz_is_idempotent(
     assert Chunk.objects.count() == _EXPECTED_INGEST_CHUNKS
 
 
-@pytest.mark.django_db
 def test_ingest_lex_uz_refuses_when_gemini_key_missing(
     patched_scraper: Path,
     settings,
