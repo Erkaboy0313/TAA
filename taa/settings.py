@@ -172,12 +172,15 @@ if not DEBUG:
 # Logging — pure stdlib dictConfig. Docker captures stdout so no filehandlers.
 # See architecture.md §10: structured JSON logs + Sentry are Faza 3 additions
 # that layer on top of this baseline (python-json-logger formatter swap).
-# The PII-redaction filter is added later — in the accounts story that
-# introduces `telegram_id` and the hashing utility it depends on.
+# PII-redaction filter lives in apps.bot.logging_filter and is attached to
+# the console handler below.
 # ---------------------------------------------------------------------------
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "pii_redaction": {"()": "apps.bot.logging_filter.PiiRedactionFilter"},
+    },
     "formatters": {
         "compact": {
             "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
@@ -188,6 +191,7 @@ LOGGING = {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "compact",
+            "filters": ["pii_redaction"],
         },
     },
     "loggers": {
