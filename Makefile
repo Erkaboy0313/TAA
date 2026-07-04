@@ -5,7 +5,7 @@
 
 .DEFAULT_GOAL := help
 .PHONY: help dev up down restart logs ps shell migrate makemigrations \
-        test cov lint fmt check precommit-install rebuild clean ingest-tax-code
+        test cov lint fmt check precommit-install rebuild clean ingest-tax-code bot
 
 COMPOSE ?= docker compose
 APP     ?= app
@@ -65,4 +65,7 @@ clean:  ## Stop containers AND drop volumes (destructive — DB wiped).
 
 ingest-tax-code:  ## Fetch + ingest the full Uzbek Tax Code (needs GEMINI_API_KEY).
 	$(COMPOSE) exec $(APP) python manage.py ingest_lex_uz
+
+bot:  ## Run the bot in polling mode (dev only — no webhook / ngrok needed).
+	$(COMPOSE) exec $(APP) python manage.py runbot
 
