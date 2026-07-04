@@ -8,11 +8,14 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.core.views import health
+
 admin.site.site_header = "TAA admin"
 admin.site.site_title = "TAA admin"
 admin.site.index_title = "TAA"
 
 urlpatterns: list = [
+    path("health/", health, name="health"),
     path("bot/", include("apps.bot.urls")),
 ]
 
