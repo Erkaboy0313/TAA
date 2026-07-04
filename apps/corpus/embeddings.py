@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 import httpx
 from google import genai
+from google.genai import types as genai_types
 from tenacity import (
     AsyncRetrying,
     RetryError,
@@ -32,8 +33,12 @@ from apps.corpus.exceptions import CorpusError, EmbeddingError
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-# 768-dim embeddings — matches `Chunk.embedding` VectorField dimensions.
-_EMBED_MODEL = "text-embedding-004"
+# `text-embedding-004` was retired from v1beta; `gemini-embedding-001` is the
+# current model. Native output is 3072-dim; we ask for 768 via `output_
+# dimensionality` in the config below so `Chunk.embedding` VectorField(768)
+# still fits without a migration.
+_EMBED_MODEL = "gemini-embedding-001"
+_EMBED_OUTPUT_DIM = 768
 # Retry only on network-layer failures. A 4xx content error must NOT be
 # retried blindly (project-context R9).
 _RETRYABLE = retry_if_exception_type(httpx.HTTPError)
@@ -102,6 +107,9 @@ class GeminiEmbeddingProvider:
             response = await client.aio.models.embed_content(
                 model=_EMBED_MODEL,
                 contents=texts,
+                config=genai_types.EmbedContentConfig(
+                    output_dimensionality=_EMBED_OUTPUT_DIM,
+                ),
             )
             return _extract_vectors(response)
 
